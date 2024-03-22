@@ -401,7 +401,6 @@ require('lazy').setup({
       end, { desc = '[S]earch [N]eovim files' })
     end,
   },
-
   { -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
     dependencies = {
@@ -413,11 +412,16 @@ require('lazy').setup({
       -- Useful status updates for LSP.
       -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
       { 'j-hui/fidget.nvim', opts = {} },
-
+      { 'RobertBrunhage/dart-tools.nvim' },
       -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
       -- used for completion, annotations and signatures of Neovim apis
       { 'folke/neodev.nvim', opts = {} },
     },
+    -- opts = function()
+    --   require('lspconfig').dartls.setup {
+    --     cmd = { 'dart', '/opt/dart-sdk/bin/snapshots/analysis_server.dart.snapshot', '--protocol=lsp' },
+    --   }
+    -- end,
     config = function()
       -- Brief aside: **What is LSP?**
       --
@@ -527,11 +531,36 @@ require('lazy').setup({
       --  So, we create new capabilities with nvim cmp, and then broadcast that to the servers.
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
-
+      -- require('lspconfig').dartls.setup {
+      --   capabilities = capabilities,
+      --   cmd = {
+      --     'dart',
+      --     'snap/flutter/common/flutter/bin/cache/dart-sdk/bin/snapshots/analysis_server.dart.snapshot',
+      --     '--protocol=lsp',
+      --     -- "--port=8123",
+      --     -- "--instrumentation-log-file=/Users/robertbrunhage/Desktop/lsp-log.txt",
+      --   },
+      --   filetypes = { 'dart' },
+      --   init_options = {
+      --     onlyAnalyzeProjectsWithOpenFiles = false,
+      --     suggestFromUnimportedLibraries = true,
+      --     closingLabels = true,
+      --     outline = false,
+      --     flutterOutline = false,
+      --   },
+      --   settings = {
+      --     dart = {
+      --       updateImportsOnRename = true,
+      --       completeFunctionCalls = true,
+      --       showTodos = true,
+      --     },
+      --   },
+      -- }
+      -- require 'dart-tools'
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --
-      --  Add any additional override configuration in the following tables. Available keys are:
+      --  Add any additional override configuration in the following tabl,es. Available keys are:
       --  - cmd (table): Override the default command used to start the server
       --  - filetypes (table): Override the default list of associated filetypes for the server
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
@@ -659,6 +688,7 @@ require('lazy').setup({
       --  into multiple repos for maintenance purposes.
       'hrsh7th/cmp-nvim-lsp',
       'hrsh7th/cmp-path',
+      'hrsh7th/cmp-buffer',
     },
     config = function()
       -- See `:help cmp`
@@ -724,6 +754,7 @@ require('lazy').setup({
           { name = 'nvim_lsp' },
           { name = 'luasnip' },
           { name = 'path' },
+          { name = 'buffer' },
         },
       }
     end,
@@ -791,7 +822,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
-      ensure_installed = { 'bash', 'c', 'html', 'lua', 'markdown', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'html', 'lua', 'markdown', 'vim', 'vimdoc', 'dart' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -822,14 +853,47 @@ require('lazy').setup({
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
 
+  {
+    'akinsho/flutter-tools.nvim',
+    lazy = false,
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'stevearc/dressing.nvim', -- optional for vim.ui.select
+    },
+    config = function()
+      require('flutter-tools').setup {
+        flutter_path = '/home/max/snap/flutter/common/flutter/bin/flutter', -- <-- this takes priority over the lookup
+        root_patterns = { '.git', 'pubspec.yaml' }, -- patterns to find the root of your flutter project
+        fvm = false, -- takes priority over path, uses <workspace>/.fvm/flutter_sdk if enabled
+        widget_guides = {
+          enabled = false,
+        },
+        closing_tags = {
+          highlight = 'ErrorMsg', -- highlight for the closing tag
+          prefix = '>', -- character to use for close tag e.g. > Widget
+          enabled = true, -- set to false to disable
+        },
+        lsp = {
+          color = { -- show the derived colours for dart variables
+            enabled = false, -- whether or not to highlight color variables at all, only supported on flutter >= 2.10
+            background = false, -- highlight the background
+            background_color = nil, -- required, when background is transparent (i.e. background_color = { r = 19, g = 17, b = 24},)
+            foreground = false, -- highlight the foreground
+            virtual_text = true, -- show the highlight using virtual text
+            virtual_text_str = '■', -- the virtual text character to highlight
+          },
+        },
+      }
+    end,
+  },
   -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
   --
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
-  --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.lint',
+  -- require 'kickstart.plugins.dart',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
